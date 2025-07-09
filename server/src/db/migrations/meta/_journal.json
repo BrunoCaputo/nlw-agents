@@ -8,6 +8,13 @@
       "when": 1751944815009,
       "tag": "0000_open_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752104281045,
+      "tag": "0001_misty_runaways",
+      "breakpoints": true
     }
   ]
 }
