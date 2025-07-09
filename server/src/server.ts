@@ -6,6 +6,7 @@ import {
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
 import { env } from './config/env.ts'
+import { getRoomsRoute } from './http/routes/get-rooms.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -15,5 +16,7 @@ app.register(fastifyCors, {
 
 app.setSerializerCompiler(serializerCompiler)
 app.setValidatorCompiler(validatorCompiler)
+
+app.register(getRoomsRoute)
 
 app.listen({ port: env.PORT })
