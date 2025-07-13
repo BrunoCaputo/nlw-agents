@@ -1,3 +1,3 @@
-export type CreateRoomResponse = {
+export interface CreateRoomResponse {
   roomId: string
 }
