@@ -3,7 +3,7 @@ import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod'
 import z from 'zod/v4'
 import { db } from '../../db/connection.ts'
 import { schema } from '../../db/schema/index.ts'
-import { generateEmbeddings } from '../../services/gemini.ts'
+import { generateAnswer, generateEmbeddings } from '../../services/gemini.ts'
 
 export const createQuestionRoute: FastifyPluginCallbackZod = (app) => {
   app.post(
@@ -44,20 +44,26 @@ export const createQuestionRoute: FastifyPluginCallbackZod = (app) => {
         )
         .limit(3)
 
-      return reply.status(200).send({ chunks })
+      let answer: string | null = null
 
-      // const result = await db
-      //   .insert(schema.questions)
-      //   .values({ roomId, question })
-      //   .returning()
+      if (chunks.length > 0) {
+        const transcriptions = chunks.map((chunk) => chunk.transcription)
 
-      // const insertedQuestion = result[0]
+        answer = await generateAnswer(question, transcriptions)
+      }
 
-      // if (!insertedQuestion) {
-      //   throw new Error('Failed to create new question')
-      // }
+      const result = await db
+        .insert(schema.questions)
+        .values({ roomId, question, answer })
+        .returning()
 
-      // return reply.status(201).send({ questionId: insertedQuestion.id })
+      const insertedQuestion = result[0]
+
+      if (!insertedQuestion) {
+        throw new Error('Failed to create new question')
+      }
+
+      return reply.status(201).send({ questionId: insertedQuestion.id, answer })
     }
   )
 }
