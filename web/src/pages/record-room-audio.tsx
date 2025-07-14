@@ -17,12 +17,17 @@ export function RecordRoomAudio() {
 
   const params = useParams<RecordRoomAudioParams>()
   const recorder = useRef<MediaRecorder | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout>(null)
 
   function stopRecording() {
     setIsRecording(false)
 
     if (recorder.current && recorder.current.state !== 'inactive') {
       recorder.current.stop()
+    }
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
     }
   }
 
@@ -38,6 +43,29 @@ export function RecordRoomAudio() {
 
     const result = await response.json()
     console.log(result)
+  }
+
+  function createRecorder(audio: MediaStream) {
+    recorder.current = new MediaRecorder(audio, {
+      mimeType: 'audio/webm',
+      audioBitsPerSecond: 64_000,
+    })
+
+    recorder.current.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        uploadAudio(event.data)
+      }
+    }
+
+    recorder.current.onstart = () => {
+      console.log('Gravação iniciada!')
+    }
+
+    recorder.current.onstop = () => {
+      console.log('Gravação encerrada!')
+    }
+
+    recorder.current.start()
   }
 
   async function startRecording() {
@@ -57,26 +85,13 @@ export function RecordRoomAudio() {
         },
       })
 
-      recorder.current = new MediaRecorder(audio, {
-        mimeType: 'audio/webm',
-        audioBitsPerSecond: 64_000,
-      })
+      createRecorder(audio)
 
-      recorder.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          uploadAudio(event.data)
-        }
-      }
+      intervalRef.current = setInterval(() => {
+        recorder.current?.stop()
 
-      recorder.current.onstart = () => {
-        console.log('Gravação iniciada!')
-      }
-
-      recorder.current.onstop = () => {
-        console.log('Gravação encerrada!')
-      }
-
-      recorder.current.start()
+        createRecorder(audio)
+      }, 5000)
     } catch (error) {
       console.error(error)
       throw error
