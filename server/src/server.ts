@@ -34,4 +34,7 @@ app.register(getRoomQuestionsRoute)
 app.register(createQuestionRoute)
 app.register(uploadAudioRoute)
 
-app.listen({ port: env.PORT })
+app.listen({ port: env.PORT }).then(() => {
+  // biome-ignore lint/suspicious/noConsole: Running callback
+  console.log(`🚀 Server running on PORT ${env.PORT}`)
+})
