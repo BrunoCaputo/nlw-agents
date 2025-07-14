@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noConsole: dev */
 import { useRef, useState } from 'react'
+import { Navigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 
 const isRecordingSupported: boolean =
@@ -7,9 +8,14 @@ const isRecordingSupported: boolean =
   typeof navigator.mediaDevices.getUserMedia === 'function' &&
   typeof window.MediaRecorder === 'function'
 
+type RecordRoomAudioParams = {
+  roomId: string
+}
+
 export function RecordRoomAudio() {
   const [isRecording, setIsRecording] = useState<boolean>(false)
 
+  const params = useParams<RecordRoomAudioParams>()
   const recorder = useRef<MediaRecorder | null>(null)
 
   function stopRecording() {
@@ -18,6 +24,20 @@ export function RecordRoomAudio() {
     if (recorder.current && recorder.current.state !== 'inactive') {
       recorder.current.stop()
     }
+  }
+
+  async function uploadAudio(audio: Blob) {
+    const formData = new FormData()
+
+    formData.append('file', audio, 'audio.webm')
+
+    const response = await fetch(
+      `http://localhost:3333/rooms/${params.roomId}/audio`,
+      { method: 'POST', body: formData }
+    )
+
+    const result = await response.json()
+    console.log(result)
   }
 
   async function startRecording() {
@@ -44,7 +64,7 @@ export function RecordRoomAudio() {
 
       recorder.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          console.log(event.data)
+          uploadAudio(event.data)
         }
       }
 
@@ -61,6 +81,10 @@ export function RecordRoomAudio() {
       console.error(error)
       throw error
     }
+  }
+
+  if (!params.roomId) {
+    return <Navigate replace to="/" />
   }
 
   return (
